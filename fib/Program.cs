@@ -145,7 +145,7 @@ namespace fib
                     Console.WriteLine(question);
                     answers[i] = Console.ReadLine();
                 }
-
+                ///commit by sari
                 var rspContent = string.Join("\n", answers);
                 File.WriteAllText(output, rspContent);
 
