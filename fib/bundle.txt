@@ -1,0 +1,3 @@
+===============note===============
+directory: D:\תמר תכנות\שנה ג\fib\fib
+name: bundle.txt

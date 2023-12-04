@@ -1,25 +1,22 @@
-﻿using Microsoft.VisualBasic.FileIO;
-using System.CommandLine;
-using System.CommandLine.Invocation;
+﻿using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.IO;
 
 namespace fib
-{      public class Program
+{
+    public class Program
     {
         static void Main(string[] args)
         {
-            bool isValid=false;
-            var bundleCommand = new Command("bundle", "Bundle code files to a single file");
-            var rspCommand = new Command("create-rsp", "create response file with recommended options");
+            bool isValid = false;
 
-            var rspOptionOutput = new Option<string>("--output", "file path");
+            //creating bundle command
+            var bundleCommand = new Command("bundle", "Bundle code files to a single file");
 
             var bundleOptionOutput = new Option<FileInfo>("--output", "file path and name");
             var bundleOptionLanguage = new Option<string[]>("--language", "selected programming language")
             {
                 IsRequired = true
-
             };
             var bundleOptionNote = new Option<bool>("--note", "include directory and name of code file");
             var bundleOptionSort = new Option<string>("--sort", "sort the writing of codefiles by order");
@@ -32,19 +29,23 @@ namespace fib
             bundleOptionNote.AddAlias("-n");
             bundleOptionOutput.AddAlias("-o");
             bundleOptionSort.AddAlias("-s");
-          
+
             bundleOptionSort.SetDefaultValue(string.Empty);
 
-            bundleCommand.AddOption(bundleOptionOutput);  
-            bundleCommand.AddOption(bundleOptionLanguage);  
+            bundleCommand.AddOption(bundleOptionOutput);
+            bundleCommand.AddOption(bundleOptionLanguage);
             bundleCommand.AddOption(bundleOptionNote);
             bundleCommand.AddOption(bundleOptionSort);
             bundleCommand.AddOption(bundleOptionDeleteEmptyLines);
             bundleCommand.AddOption(bundleOptionAuthor);
 
+            //creating create-rsp command
+            var rspCommand = new Command("create-rsp", "create response file with recommended options");
+            var rspOptionOutput = new Option<string>("--output", "path for response file");
             rspCommand.AddOption(rspOptionOutput);
 
-            bundleCommand.SetHandler((output,language,note,sort,remove,author) => 
+            //bundle command
+            bundleCommand.SetHandler((output, language, note, sort, remove, author) =>
             {
                 try
                 {
@@ -62,15 +63,15 @@ namespace fib
                     }
 
                     IEnumerable<string> sortedFiles;
+
                     if (bundleOptionSort is not null && sort.Equals("type"))
                     {
                         sortedFiles = codeFiles.OrderBy(file => Path.GetExtension(file));
                     }
                     else
                     {
-                        sortedFiles = codeFiles;
+                        sortedFiles=codeFiles;
                     }
-
                     using (StreamWriter writer = new StreamWriter(output.FullName))
                     {
                         if (author is not null)
@@ -103,14 +104,12 @@ namespace fib
                                 writer.WriteLine(fileContent);
                                 writer.WriteLine();
                             }
-                           
+
                         }
-                        if(isValid==true)
-                        Console.WriteLine("bundle file created succesfully");
+                        if (isValid == true)
+                            Console.WriteLine("bundle file created succesfully");
                         else
-                        {
                             Console.WriteLine("Note: the value you entered is invalid for language option. the bundle file is empty now.");
-                        }
                     }
                 }
                 catch (DirectoryNotFoundException dr)
@@ -119,62 +118,43 @@ namespace fib
                     Console.WriteLine("please enter a valid path.");
                     Console.WriteLine("If the file name consists of two words, write it in quotation marks ");
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
                 }
 
-        }, bundleOptionOutput,bundleOptionLanguage,bundleOptionNote,bundleOptionSort,bundleOptionDeleteEmptyLines,bundleOptionAuthor);
+            }, bundleOptionOutput, bundleOptionLanguage, bundleOptionNote, bundleOptionSort, bundleOptionDeleteEmptyLines, bundleOptionAuthor);
 
+            //create-rsp command
             rspCommand.SetHandler((output) =>
             {
-                var options = new[]
+                string[] options = new string[]
                 {
-                 new QuestionOption("output", "What is the recomemnded value for option 'output' "),
-                 new QuestionOption("language", "What is the recomemnded value for option 'language' "),
-                 new QuestionOption("note", "What is the recomemnded value for option 'note' "),
-                 new QuestionOption("sort", "What is the recomemnded value for option 'sort' "),
-                 new QuestionOption("remove empty lines", "What is the recomemnded value for option 'remove empty lines' "),
-                 new QuestionOption("author", "What is the recomemnded value for option 'author' "),
+                    "What is the recomemnded value for option 'output' ",
+                    "What is the recomemnded value for option 'language' ",
+                    "What is the recomemnded value for option 'note' ",
+                    "What is the recomemnded value for option 'sort' ",
+                    "What is the recomemnded value for option 'remove empty lines' ",
+                    "What is the recomemnded value for option 'author' "
                 };
                 var answers = new string[options.Length];
 
                 for (int i = 0; i < options.Length; i++)
                 {
-                    var question = options[i].Question;
-                    Console.WriteLine(question);
+                    Console.WriteLine(options[i]);
                     answers[i] = Console.ReadLine();
                 }
-                ///commit by sari
+
                 var rspContent = string.Join("\n", answers);
                 File.WriteAllText(output, rspContent);
 
                 Console.WriteLine("response file created succesfully");
 
-            },rspOptionOutput);
+            }, rspOptionOutput);
             var rootCommand = new RootCommand("root command for file bundler CLI");
             rootCommand.AddCommand(bundleCommand);
             rootCommand.AddCommand(rspCommand);
             rootCommand.InvokeAsync(args);
         }
     }
-    class QuestionOption
-    {
-        public string Option { get; }
-        public string Question { get; }
-
-        public QuestionOption(string option, string question)
-        {
-            Option = option;
-            Question = question;
-        }
-    }
 }
-//לחילופין ניתן להקיש ניתוב מלא. 
-
-//אם האפליקציה לא תצליח לשמור בניתוב זה היא תספק הודעת שגיאה מתאימה.
-
-//יש לשים לב שאם יש רווח בניתוב של הקובץ (לדוגמא אם שם התיקיה מורכב משתי מילים) יש להקיש אותו בשורת הפקודה כשהוא עטוף במרכאות.
-//עלייך לדאוג לבצע בדיקות תקינות (ולידציה) על הקלט מהמשתמש ולהציג הודעה מסודרת במקרה שהקלט לא תקין.
-
-//אין לכלול ב-bundle קבצי קוד שנמצאים בתיקיות bin, debug וכדומה.
